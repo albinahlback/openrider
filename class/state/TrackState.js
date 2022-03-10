@@ -20,9 +20,9 @@ export default class TrackState extends GameState {
         this.ui.uiElements.push(leftToolbar, rightToolbar);
 
         if (!isRace) {
-            let importButton = new UIButton(this.ui, this.track, 0, 0, 100, 26, 'Import track', () => this.handleImport(), UIElement.ALIGN_BOTTOM);
-            let exportButton = new UIButton(this.ui, this.track, 110, 0, 100, 26, 'Export track', () => this.handleExport(), UIElement.ALIGN_BOTTOM);
-            let uploadButton = new UIButton(this.ui, this.track, 220, 0, 100, 26, 'Upload track', () => this.handleUpload(), UIElement.ALIGN_BOTTOM);
+            let importButton = new UIButton(this.ui, this.track, 10, 10, 100, 26, 'Import track', () => this.handleImport(), UIElement.ALIGN_BOTTOM);
+            let exportButton = new UIButton(this.ui, this.track, 120, 10, 100, 26, 'Export track', () => this.handleExport(), UIElement.ALIGN_BOTTOM);
+            let uploadButton = new UIButton(this.ui, this.track, 230, 10, 100, 26, 'Upload track', () => this.handleUpload(), UIElement.ALIGN_BOTTOM);
 
             this.ui.uiElements.push(importButton, exportButton, uploadButton);
         }
@@ -137,6 +137,63 @@ export default class TrackState extends GameState {
             ctx.fillStyle = runner.instance.color;
             ctx.fillText(text, this.track.canvas.width - 30 - textMetrics.width, 15 * (1 + index));
         });
+
+        if (this.track.debug) {
+            ctx.save();
+
+            ctx.beginPath();
+            for (let y = gridTopLeft.y; y <= gridBottomRight.y; y++) {
+                let gridLineY = Math.floor(this.track.canvas.height / 2 - this.track.camera.y * this.track.zoomFactor + y * this.track.cache.cellSize * this.track.zoomFactor);
+                ctx.moveTo(0, gridLineY);
+                ctx.lineTo(this.track.canvas.width, gridLineY);
+            }
+
+            for (let x = gridTopLeft.x; x <= gridBottomRight.x; x++) {
+                let gridLineX = Math.floor(this.track.canvas.width / 2 - this.track.camera.x * this.track.zoomFactor + x * this.track.cache.cellSize * this.track.zoomFactor);
+                ctx.moveTo(gridLineX, 0);
+                ctx.lineTo(gridLineX, this.track.canvas.height);
+            }
+
+            ctx.strokeStyle = '#0000ff55';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            let physicsGridTopLeft = Grid.gridCoords(topLeft, this.track.grid.cellSize);
+            let physicsGridBottomRight = Grid.gridCoords(bottomRight, this.track.grid.cellSize);
+
+            ctx.beginPath();
+            for (let y = physicsGridTopLeft.y; y <= physicsGridBottomRight.y; y++) {
+                let gridLineY = Math.floor(this.track.canvas.height / 2 - this.track.camera.y * this.track.zoomFactor + y * this.track.grid.cellSize * this.track.zoomFactor);
+                ctx.moveTo(0, gridLineY);
+                ctx.lineTo(this.track.canvas.width, gridLineY);
+            }
+
+            for (let x = physicsGridTopLeft.x; x <= physicsGridBottomRight.x; x++) {
+                let gridLineX = Math.floor(this.track.canvas.width / 2 - this.track.camera.x * this.track.zoomFactor + x * this.track.grid.cellSize * this.track.zoomFactor);
+                ctx.moveTo(gridLineX, 0);
+                ctx.lineTo(gridLineX, this.track.canvas.height);
+            }
+
+            ctx.strokeStyle = '#0000ff22';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            for (let bikePart of this.track.playerRunner.instance.points) {
+                let x = Math.floor(bikePart.pos.x / this.track.grid.cellSize - 0.5);
+                let y = Math.floor(bikePart.pos.y / this.track.grid.cellSize - 0.5);
+
+                let cellX = Math.floor(this.track.canvas.width / 2 - this.track.camera.x * this.track.zoomFactor + x * this.track.grid.cellSize * this.track.zoomFactor);
+                let cellY = Math.floor(this.track.canvas.height / 2 - this.track.camera.y * this.track.zoomFactor + y * this.track.grid.cellSize * this.track.zoomFactor);
+
+                ctx.fillStyle = '#ff000011';
+                ctx.fillRect(cellX, cellY, this.track.grid.cellSize * this.track.zoomFactor, this.track.grid.cellSize * this.track.zoomFactor);
+                ctx.fillRect(cellX, cellY + this.track.grid.cellSize * this.track.zoomFactor, this.track.grid.cellSize * this.track.zoomFactor, this.track.grid.cellSize * this.track.zoomFactor);
+                ctx.fillRect(cellX + this.track.grid.cellSize * this.track.zoomFactor, cellY, this.track.grid.cellSize * this.track.zoomFactor, this.track.grid.cellSize * this.track.zoomFactor);
+                ctx.fillRect(cellX + this.track.grid.cellSize * this.track.zoomFactor, cellY + this.track.grid.cellSize * this.track.zoomFactor, this.track.grid.cellSize * this.track.zoomFactor, this.track.grid.cellSize * this.track.zoomFactor);
+            }
+
+            ctx.restore();
+        }
     }
 
     /**
@@ -189,7 +246,7 @@ export default class TrackState extends GameState {
     onKeyboardDown(e) {
         let tool = this.track.toolCollection.getByKeyLabel(e.detail);
         if (tool) {
-            tool.run();
+            tool.run(true);
         }
     }
 
